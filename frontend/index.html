@@ -10,11 +10,134 @@
 
     <h2>My Tasks</h2>
 
-    <ul>
-        <li>Learn Java</li>
-        <li>Practice DSA</li>
-        <li>Build a Project</li>
+    <input type="text" id="task-input" placeholder="Enter a task">
+
+    <button onclick="addTask()">Add Task</button>
+
+    <ul id="task-list">
     </ul>
+
+
+    <script>
+
+        async function loadTasks() {
+
+            const response = await fetch("http://127.0.0.1:8000/tasks");
+
+            const tasks = await response.json();
+
+            const taskList = document.getElementById("task-list");
+
+            taskList.innerHTML = "";
+
+            tasks.forEach(function(task) {
+
+                const listItem = document.createElement("li");
+
+                const checkbox = document.createElement("input");
+
+                checkbox.type = "checkbox";
+
+                checkbox.checked = task.completed;
+
+                if (task.completed) {
+                    listItem.style.textDecoration = "line-through";
+                }
+
+
+                checkbox.onclick = async function() {
+
+                    await fetch(
+                        "http://127.0.0.1:8000/tasks/" + task.id,
+                        {
+                            method: "PUT",
+
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+
+                            body: JSON.stringify({
+                                completed: checkbox.checked
+                            })
+                        }
+                    );
+
+                    if (checkbox.checked) {
+                        listItem.style.textDecoration = "line-through";
+                    } else {
+                        listItem.style.textDecoration = "none";
+                    }
+
+                };
+
+
+                const deleteButton = document.createElement("button");
+
+                deleteButton.textContent = "Delete";
+
+                deleteButton.onclick = async function() {
+
+                    await fetch(
+                        "http://127.0.0.1:8000/tasks/" + task.id,
+                        {
+                            method: "DELETE"
+                        }
+                    );
+
+                    loadTasks();
+
+                };
+
+
+                listItem.appendChild(checkbox);
+
+                listItem.appendChild(
+                    document.createTextNode(" " + task.title + " ")
+                );
+
+                listItem.appendChild(deleteButton);
+
+                taskList.appendChild(listItem);
+
+            });
+        }
+
+
+        async function addTask() {
+
+            const input = document.getElementById("task-input");
+
+            const title = input.value;
+
+            if (title === "") {
+                return;
+            }
+
+            await fetch("http://127.0.0.1:8000/tasks", {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    id: Date.now(),
+                    title: title,
+                    completed: false
+                })
+
+            });
+
+            input.value = "";
+
+            loadTasks();
+        }
+
+
+        loadTasks();
+
+    </script>
 
 </body>
 </html>
